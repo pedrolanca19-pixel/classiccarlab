@@ -912,9 +912,47 @@ html.lightbox-open { overflow: hidden; }
   .lightbox { width: 100vw; max-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; }
   .lightbox-slide img { max-height: calc(100dvh - 170px); }
   .lightbox-head { padding: var(--space-xs) var(--space-sm); }
-  .lightbox-nav { width: 40px; height: 40px; }
   .lightbox-thumb { width: 72px; }
+  /* Arrows sit beside the thumbnails instead of covering the photo. */
+  .lightbox-stage { position: static; }
+  .lightbox-nav {
+    top: auto;
+    bottom: 21px;
+    transform: none;
+    width: 44px;
+    height: 44px;
+    background: var(--surface-2);
+    backdrop-filter: none;
+  }
+  .lightbox-prev { left: var(--space-sm); }
+  .lightbox-next { right: var(--space-sm); }
   .hero-ctas .btn { width: 100%; }
   .hero-ctas { flex-direction: column; }
+}
+
+/* Phone held sideways: give the photo the whole screen. */
+@media (max-height: 500px) {
+  .lightbox {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .lightbox-head { padding: 6px var(--space-sm); }
+  .lightbox-heading h3 { font-size: 16px; }
+  .lightbox-close { width: 40px; height: 40px; }
+  .lightbox-thumbs { display: none; }
+  .lightbox-slide img { max-height: calc(100dvh - 56px); }
+  .lightbox-stage { position: relative; }
+  .lightbox-nav {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(10, 10, 11, 0.6);
+    backdrop-filter: blur(6px);
+  }
 }
 
