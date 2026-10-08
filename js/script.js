@@ -262,8 +262,8 @@
     {
       name: "Mercedes-Benz 280 SL",
       images: [
-        { src: "portfolio/porche/mercedeznew.jpg", label: "after" },
-        { src: "portfolio/porche/mercedezold.jpg", label: "before" }
+        { src: "portfolio/mercedez/mercedeznew.jpg", label: "after" },
+        { src: "portfolio/mercedez/mercedezold.jpg", label: "before" }
       ]
     }
   ];
@@ -282,8 +282,8 @@
       const img = document.createElement("img");
       img.src = car.images[0].src;
       img.alt = "";
-      img.width = 2048;
-      img.height = 1536;
+      img.width = 1600;
+      img.height = 1200;
       img.loading = "lazy";
 
       const caption = document.createElement("span");
