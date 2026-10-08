@@ -592,6 +592,7 @@ html.lightbox-open { overflow: hidden; }
   border-bottom: 1px solid var(--border);
 }
 .lightbox-heading { margin-right: auto; min-width: 0; }
+.lightbox-heading h3:focus { outline: none; }
 .lightbox-heading h3 {
   font-family: var(--font-display);
   font-size: 20px;
@@ -628,7 +629,7 @@ html.lightbox-open { overflow: hidden; }
 .lightbox-stage {
   position: relative;
   min-height: 0;
-  flex: 1;
+  flex: 0 1 auto;
   background: #050506;
 }
 .lightbox-track {
@@ -648,6 +649,7 @@ html.lightbox-open { overflow: hidden; }
 .lightbox-slide img {
   width: 100%;
   height: auto;
+  aspect-ratio: 4 / 3;
   max-height: calc(94dvh - 190px);
   object-fit: contain;
   margin: 0 auto;
