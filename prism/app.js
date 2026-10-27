@@ -862,6 +862,33 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
+const dlg = $('dlg');
+function openDialog(title, node) {
+  $('dlgTitle').textContent = title;
+  $('dlgBody').replaceChildren(node);
+  dlg.hidden = false;
+}
+function closeDialog() { dlg.hidden = true; $('dlgBody').replaceChildren(); }
+$('dlgClose').addEventListener('click', closeDialog);
+dlg.addEventListener('click', e => { if (e.target === dlg) closeDialog(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !dlg.hidden) closeDialog(); });
+
+// Mostra o resultado dentro da página: onde o download direto é bloqueado (ex.: dentro de um
+// artefacto), o utilizador guarda a imagem/vídeo com botão direito ou toque longo.
+function showMedia(title, blob, kind) {
+  const url = URL.createObjectURL(blob);
+  const wrap = document.createElement('div');
+  wrap.className = 'dlg-media';
+  const el = document.createElement(kind === 'video' ? 'video' : 'img');
+  el.src = url;
+  if (kind === 'video') { el.controls = true; el.loop = true; el.autoplay = true; el.muted = true; el.playsInline = true; }
+  const note = document.createElement('p');
+  note.className = 'hint';
+  note.textContent = 'Se o download não começou, carrega com o botão direito (ou toque longo) para guardar.';
+  wrap.append(el, note);
+  openDialog(title, wrap);
+}
+
 function exportPng() {
   const longEdge = [0, 1920, 2560, 3840, 5120][state.exportSize];
   const prev = { w: canvas.width, h: canvas.height };
@@ -875,7 +902,10 @@ function exportPng() {
     }
     render();
     canvas.toBlob(blob => {
-      if (blob) download(blob, `prism-${canvas.width}x${canvas.height}.png`);
+      if (blob) {
+        download(blob, `prism-${canvas.width}x${canvas.height}.png`);
+        showMedia(`PNG ${canvas.width}×${canvas.height}`, blob, 'image');
+      }
       say(blob ? `PNG exportado (${canvas.width}×${canvas.height})` : 'Falha ao exportar');
       exporting = false;
       resize();
@@ -899,7 +929,9 @@ function toggleRecord() {
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = () => {
     const type = recorder.mimeType || 'video/webm';
-    download(new Blob(chunks, { type }), 'prism.' + (type.includes('mp4') ? 'mp4' : 'webm'));
+    const blob = new Blob(chunks, { type });
+    download(blob, 'prism.' + (type.includes('mp4') ? 'mp4' : 'webm'));
+    showMedia('Vídeo gravado', blob, 'video');
     recorder = null;
     btn.classList.remove('on');
     btn.textContent = 'Gravar vídeo';
@@ -910,22 +942,41 @@ function toggleRecord() {
   btn.textContent = 'Parar gravação';
 }
 
+function settingsDialog(title, text, onApply) {
+  const wrap = document.createElement('div');
+  wrap.className = 'dlg-form';
+  const ta = document.createElement('textarea');
+  ta.id = 'settingsJson';
+  ta.value = text;
+  ta.readOnly = !onApply;
+  ta.spellcheck = false;
+  wrap.appendChild(ta);
+  if (onApply) {
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    ok.textContent = 'Aplicar';
+    ok.addEventListener('click', () => { if (onApply(ta.value)) closeDialog(); });
+    wrap.appendChild(ok);
+  }
+  openDialog(title, wrap);
+  ta.focus();
+  if (!onApply) ta.select();
+}
+
 async function copySettings() {
   const json = JSON.stringify(state);
   try { await navigator.clipboard.writeText(json); say('Definições copiadas'); }
-  catch (e) { window.prompt('Copia as definições:', json); }
+  catch (e) { settingsDialog('Copia as definições', json); }
 }
 
-async function pasteSettings() {
-  let text = '';
-  try { text = await navigator.clipboard.readText(); } catch (e) { /* cai para prompt */ }
-  if (!text) text = window.prompt('Cola aqui as definições (JSON):') || '';
-  if (!text) return;
-  try {
-    const obj = JSON.parse(text);
-    applyAll({ ...DEFAULTS, ...obj });
-    say('Definições aplicadas');
-  } catch (e) { say('JSON inválido'); }
+function pasteSettings() {
+  settingsDialog('Cola as definições (JSON)', '', text => {
+    try {
+      applyAll({ ...DEFAULTS, ...JSON.parse(text) });
+      say('Definições aplicadas');
+      return true;
+    } catch (e) { say('JSON inválido'); return false; }
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -952,7 +1003,7 @@ $('btnCopy').addEventListener('click', copySettings);
 $('btnPaste').addEventListener('click', pasteSettings);
 $('btnFs').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
-  else (document.documentElement.requestFullscreen || (() => {})).call(document.documentElement);
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => say('Ecrã inteiro indisponível aqui'));
 });
 
 function setPanel(open) {
@@ -963,7 +1014,7 @@ $('btnHide').addEventListener('click', () => setPanel(false));
 $('reveal').addEventListener('click', () => setPanel(true));
 
 window.addEventListener('keydown', e => {
-  if (e.target.matches('input[type=number], select')) return;
+  if (e.target.matches('input[type=number], select, textarea')) return;
   if (e.code === 'Space') { e.preventDefault(); setPaused(!paused); }
   else if (e.key === 'h' || e.key === 'H') setPanel(!document.body.classList.contains('panel-open'));
   else if (e.key === 'r' || e.key === 'R') randomize('all');
